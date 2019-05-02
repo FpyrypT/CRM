@@ -130,23 +130,25 @@ public class ReportServiceImpl implements ReportService {
                                     goodResult = false;
                                 }
                             }
-                            // Получаем ближайший следующий переход клиента в другой статус, если такой переход случился
-                            // в течение 3 минут после предыдущей смены статуса, такой результат исключается из отчета
-                            ClientHistory afterHistory = clientRepository.getNearestClientHistoryAfterDate(client, clientHistory.getDate(), historyTypes);
-                            if (afterHistory != null) {
-                                if (clientHistory.getDate().plusMinutes(3L).isAfter(afterHistory.getDate())) {
-                                    goodResult = false;
-                                }
-                            }
-                        }
-                        if (goodResult) {
-                            result++;
+                        } else {
+                            continue;
                         }
                     } else {
                         // Если ищем переходы из статуса для Новых клиентов, то удостоверяемся, что ранее переходов в другие статусы не было
                         if (isNewClient) {
                             result++;
                         }
+                    }
+                    // Получаем ближайший следующий переход клиента в другой статус, если такой переход случился
+                    // в течение 3 минут после предыдущей смены статуса, такой результат исключается из отчета
+                    ClientHistory afterHistory = clientRepository.getNearestClientHistoryAfterDate(client, clientHistory.getDate(), historyTypes);
+                    if (afterHistory != null) {
+                        if (clientHistory.getDate().plusMinutes(3L).isAfter(afterHistory.getDate())) {
+                            goodResult = false;
+                        }
+                    }
+                    if (goodResult) {
+                        result++;
                     }
                 }
             }
