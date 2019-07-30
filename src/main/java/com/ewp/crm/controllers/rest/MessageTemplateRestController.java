@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/rest/message-template")
-@PreAuthorize("hasAnyAuthority('OWNER', 'ADMIN')")
+@PreAuthorize("hasAnyAuthority('OWNER', 'ADMIN', 'HR')")
 public class MessageTemplateRestController {
 
     private static Logger logger = LoggerFactory.getLogger(ClientRestController.class);
@@ -74,5 +74,18 @@ public class MessageTemplateRestController {
             logger.info("Template with id {} doesn't exist", id);
             return HttpStatus.BAD_REQUEST;
         }
+    }
+
+    @PostMapping ("/renameTheme")
+    public HttpStatus renameThemeTemplate(@RequestParam("id") Long id, @RequestParam("theme") String theme) {
+        MessageTemplate messageTemplate = messageTemplateService.get(id);
+        if(messageTemplate != null) {
+           messageTemplate.setTheme(theme);
+           messageTemplateService.update(messageTemplate);
+        } else {
+            logger.info("Template with id {} doesn't exist", id);
+            return HttpStatus.BAD_REQUEST;
+        }
+        return HttpStatus.OK;
     }
 }

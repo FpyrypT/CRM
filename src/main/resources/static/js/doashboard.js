@@ -223,7 +223,8 @@ function assignMentor(id, user, principalId) {
                 "<span class='mentor-icon_card' id='mn-" + id + "' value=" + owner.firstName + " " + owner.lastName + ">" +
                 "Ментор: " + owner.firstName.substring(0, 1) + owner.lastName.substring(0, 1) +
                 "</span>" +
-                "<span style='display:none'>" + owner.firstName + " " + owner.lastName + "</span>"
+                "<span style='display:none'>" + owner.firstName + " " + owner.lastName + "</span>" +
+                "<span class='ownerMentorId' style='display:none'>" + owner.id + "</span>"
             );
             fillFilterList()
         },
@@ -260,7 +261,7 @@ function changeStatusName(id) {
     $sel.each(function (index, sel) {
         var obj = {};
         obj["id"] = sel.value;
-        obj["roleName"] = sel.innerText;
+        obj["roleName"] = $(sel).next().text();
         stRoles.push(obj);
     });
     if (!validate_status_input(trial_offset, next_payment_offset)) {

@@ -8,14 +8,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.ewp.crm.util.Constants.EMPTY_STRING;
+
 public class ClientDtoForBoard {
+
     private Long id;
     private String name;
     private String lastName;
     private User ownerUser;
     private boolean isHideCard;
-    private List<String> clientEmails;
-    private List<String> clientPhones;
+    private String email;
+    private String phoneNumber;
     private String skype;
     private String city;
     private String country;
@@ -30,8 +33,8 @@ public class ClientDtoForBoard {
                              String lastName,
                              User ownerUser,
                              boolean isHideCard,
-                             List<String> clientEmails,
-                             List<String> clientPhones,
+                             String email,
+                             String phoneNumber,
                              String skype,
                              String city,
                              String country,
@@ -42,8 +45,8 @@ public class ClientDtoForBoard {
         this.lastName = lastName;
         this.ownerUser = ownerUser;
         this.isHideCard = isHideCard;
-        this.clientEmails = clientEmails;
-        this.clientPhones = clientPhones;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
         this.skype = skype;
         this.city = city;
         this.country = country;
@@ -99,20 +102,20 @@ public class ClientDtoForBoard {
         isHideCard = hideCard;
     }
 
-    public List<String> getClientEmails() {
-        return clientEmails;
+    public String getEmail() {
+        return email;
     }
 
-    public void setClientEmails(List<String> clientEmails) {
-        this.clientEmails = clientEmails;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    public List<String> getClientPhones() {
-        return clientPhones;
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
-    public void setClientPhones(List<String> clientPhones) {
-        this.clientPhones = clientPhones;
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public String getSkype() {
@@ -147,26 +150,20 @@ public class ClientDtoForBoard {
         this.socialProfiles = socialProfiles;
     }
 
-    public Optional<String> getEmail() {
-        return clientEmails.isEmpty() ? Optional.empty() : Optional.ofNullable(clientEmails.get(0));
-    }
-
-    public Optional<String> getPhoneNumber() {
-        return clientPhones.isEmpty() ? Optional.empty() : Optional.ofNullable(clientPhones.get(0));
-    }
-
-
-
     private static ClientDtoForBoard getDtoClient(Client client) {
 
-        ClientDtoForBoard clientDtoForBoard = new ClientDtoForBoard();
+        final ClientDtoForBoard clientDtoForBoard = new ClientDtoForBoard();
         clientDtoForBoard.id = client.getId();
         clientDtoForBoard.name = client.getName();
         clientDtoForBoard.lastName = client.getLastName();
         clientDtoForBoard.ownerUser = client.getOwnerUser();
         clientDtoForBoard.isHideCard = client.isHideCard();
-        clientDtoForBoard.clientEmails = client.getClientEmails();
-        clientDtoForBoard.clientPhones = client.getClientPhones();
+
+        final Optional<String> emailOptional = client.getEmail();
+        clientDtoForBoard.email = emailOptional.orElse(EMPTY_STRING);
+        final Optional<String> phoneNumberOptional = client.getPhoneNumber();
+        clientDtoForBoard.phoneNumber = phoneNumberOptional.orElse(EMPTY_STRING);
+
         clientDtoForBoard.skype = client.getSkype();
         clientDtoForBoard.city = client.getCity();
         clientDtoForBoard.country = client.getCountry();
@@ -181,4 +178,5 @@ public class ClientDtoForBoard {
                 .map(ClientDtoForBoard::getDtoClient)
                 .collect(Collectors.toList());
     }
+
 }

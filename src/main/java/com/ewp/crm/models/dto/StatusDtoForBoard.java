@@ -1,6 +1,5 @@
 package com.ewp.crm.models.dto;
 
-import com.ewp.crm.models.Client;
 import com.ewp.crm.models.Role;
 import com.ewp.crm.models.SortedStatuses;
 import com.ewp.crm.models.Status;
@@ -34,8 +33,7 @@ public class StatusDtoForBoard {
                              Long position,
                              List<Role> role,
                              Integer trialOffset,
-                             Integer nextPaymentOffset,
-                             Set<SortedStatuses> sortedStatuses) {
+                             Integer nextPaymentOffset) {
         this.id = id;
         this.name = name;
         this.isInvisible = isInvisible;
@@ -45,7 +43,6 @@ public class StatusDtoForBoard {
         this.role = role;
         this.trialOffset = trialOffset;
         this.nextPaymentOffset = nextPaymentOffset;
-        this.sortedStatuses = sortedStatuses;
     }
 
     public Long getId() {
@@ -128,7 +125,7 @@ public class StatusDtoForBoard {
         this.sortedStatuses = sortedStatuses;
     }
 
-    private static StatusDtoForBoard getStatusDto(Status status) {
+    public static StatusDtoForBoard getStatusDto(Status status) {
 
         StatusDtoForBoard statusDtoForBoard = new StatusDtoForBoard();
 
@@ -152,4 +149,5 @@ public class StatusDtoForBoard {
                 .map(StatusDtoForBoard::getStatusDto)
                 .collect(Collectors.toList());
     }
+
 }

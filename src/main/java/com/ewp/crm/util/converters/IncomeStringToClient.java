@@ -39,7 +39,9 @@ public class IncomeStringToClient {
             "Остались вопросы",
             "Задать вопрос",
             "Java Test",
-            "javalearn"
+            "javalearn",
+            "javabootcamp.ru",
+            "jslearn.online"
     );
 
     private enum KEYS {
@@ -89,6 +91,9 @@ public class IncomeStringToClient {
                 if (income.contains("javalearn")) {
                     client.setClientDescriptionComment(env.getProperty("messaging.client.description.java-learn-link"));
                 }
+                if (income.contains("jslearn.online")) {
+                    client.setClientDescriptionComment(env.getProperty("messaging.client.description.js-learn-link"));
+                }
             } else {
                 logger.error("The incoming email does not match any of the templates!!!");
                 return Optional.empty();
@@ -111,7 +116,7 @@ public class IncomeStringToClient {
                 .replaceAll("(C|c)(I|i)(T|t)(Y|y)[^6:]*6:", KEYS.COUNTRY + ":")
                 .replaceAll("(С|с)(Т|т)(Р|р)(А|а)(Н|н)(А|а)[^:]*:", KEYS.COUNTRY + ":")
                 .replaceAll("(С|с)(Т|т)(Р|р)(А|а)(Н|н)(И|и)(Ц|ц)(А|а)[^:]*:", KEYS.PAGE + ":")
-                .replaceAll("(E|e)(M|m)(A|a)(I|i)(L|l)[^:]*:", KEYS.EMAIL + ":")
+                .replaceAll("(E|e)-?(M|m)(A|a)(I|i)(L|l)[^:]*:", KEYS.EMAIL + ":")
                 .replaceAll("(S|s)(O|o)(C|c)(I|i)(A|a)(L|l)[^:]*:", KEYS.SOCIAL + ":")
                 .replaceAll("(С|с)(О|о)(Ц|ц)[^:]*(С|с)(Е|е)(Т|т)(Ь|ь)[^:]*:", KEYS.SOCIAL + ":")
                 .replaceAll("(Ф|ф)(О|о)(Р|р)(М|м)(А|а)[^:]*:", KEYS.FORM + ":")

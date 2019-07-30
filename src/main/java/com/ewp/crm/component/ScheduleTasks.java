@@ -88,6 +88,8 @@ public class ScheduleTasks {
 
 	private String adReportTemplate;
 
+	private final UserService userService;
+
 	@Autowired
 	public ScheduleTasks(VKService vkService, PotentialClientService potentialClientService,
 						 YouTubeTrackingCardService youTubeTrackingCardService,
@@ -100,7 +102,7 @@ public class ScheduleTasks {
 						 YoutubeClientService youtubeClientService, AssignSkypeCallService assignSkypeCallService,
 						 MailSendService mailSendService, Environment env, ReportService reportService,
 						 VkCampaignService vkCampaignService, TelegramService telegramService,
-						 SlackService slackService) {
+						 SlackService slackService, UserService userService) {
 		this.vkService = vkService;
 		this.potentialClientService = potentialClientService;
 		this.youTubeTrackingCardService = youTubeTrackingCardService;
@@ -128,6 +130,7 @@ public class ScheduleTasks {
 		this.telegramService = telegramService;
 		this.slackService = slackService;
 		this.projectProperties = projectPropertiesService.getOrCreate();
+		this.userService = userService;
 	}
 
 	private void addClientFromVk(Client newClient) {
@@ -142,7 +145,8 @@ public class ScheduleTasks {
             if (optionalEmail.isPresent() && !optionalEmail.get().matches(ValidationPattern.EMAIL_PATTERN)) {
                 newClient.setClientDescriptionComment(newClient.getClientDescriptionComment() + System.lineSeparator() + env.getProperty("messaging.client.email.error-in-field") + optionalEmail.get());
             }
-            clientService.addClient(newClient);
+            userService.getUserToOwnCard().ifPresent(newClient::setOwnerUser);
+            clientService.addClient(newClient, null);
             sendNotificationService.sendNewClientNotification(newClient, "vk");
             logger.info("New client with id {} has added from VK", newClient.getId());
 	}
@@ -188,6 +192,7 @@ public class ScheduleTasks {
 			Client client = assignSkypeCall.getToAssignSkypeCall();
 			String skypeTemplateHtml = env.getRequiredProperty("skype.template");
 			String skypeTemplateText = env.getRequiredProperty("skype.textTemplate");
+			String skypeTheme = env.getRequiredProperty("skype.theme");
 			User principal = assignSkypeCall.getFromAssignSkypeCall();
 			Long clientId = client.getId();
 			String dateOfSkypeCall = ZonedDateTime.parse(assignSkypeCall.getNotificationBeforeOfSkypeCall().toString())
@@ -209,7 +214,7 @@ public class ScheduleTasks {
 			}
 			if (client.getEmail().isPresent() && !client.getEmail().get().isEmpty()) {
 				try {
-					mailSendService.prepareAndSend(clientId, skypeTemplateHtml, dateOfSkypeCall, principal);
+					mailSendService.prepareAndSend(clientId, skypeTemplateHtml, dateOfSkypeCall, principal, skypeTheme);
 				} catch (Exception e) {
 					logger.warn("E-mail message not sent");
 				}

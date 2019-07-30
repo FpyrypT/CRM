@@ -223,7 +223,7 @@ public class MailSendServiceImpl implements MailSendService {
         }
     }
 
-    public void prepareAndSend(Long clientId, String templateText, String body, User principal) {
+    public void prepareAndSend(Long clientId, String templateText, String body, User principal, String templateTheme) {
         String templateFile = "emailStringTemplate";
         Optional<Client> client = clientService.getClientByID(clientId);
         if (client.isPresent()) {
@@ -246,7 +246,11 @@ public class MailSendServiceImpl implements MailSendService {
                 final MimeMessage mimeMessage = javaMailSender.createMimeMessage();
                 try {
                     final MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-                    mimeMessageHelper.setSubject("Java Mentor");
+                    if (templateTheme == null) {
+                        mimeMessageHelper.setSubject("Java Mentor");
+                    } else {
+                        mimeMessageHelper.setSubject(templateTheme);
+                    }
                     mimeMessageHelper.setTo(recipient);
                     mimeMessageHelper.setFrom(emailLogin);
                     StringBuilder htmlContent = new StringBuilder(htmlTemplateEngine.process(templateFile, ctx));
@@ -273,7 +277,7 @@ public class MailSendServiceImpl implements MailSendService {
                     javaMailSender.send(mimeMessage);
                     if (principal != null) {
                         Optional<Client> clientEmail = clientService.getClientByEmail(recipient);
-                        Optional<Message> message = messageService.addMessage(Message.Type.EMAIL, htmlContent.toString());
+                        Optional<Message> message = messageService.addMessage(Message.Type.EMAIL, htmlContent.toString(), principal.getFullName());
                         if (clientEmail.isPresent() && message.isPresent()) {
                             clientHistoryService.createHistory(principal, clientEmail.get(), message.get()).ifPresent(client.get()::addHistory);
                             clientService.updateClient(client.get());
@@ -292,7 +296,7 @@ public class MailSendServiceImpl implements MailSendService {
 
     @Override
     public void sendSimpleNotification(Long clientId, String templateText) {
-        prepareAndSend(clientId, templateText, "", null);
+        prepareAndSend(clientId, templateText, "", null, null);
     }
 
     @Async
@@ -312,4 +316,20 @@ public class MailSendServiceImpl implements MailSendService {
         user.setEmail(javaMentorEmail);
         sendNotificationMessage(user, report);
     }
+
+    @Async
+    public void sendBootCampAnswer(String subject, String text, String email) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setSubject(subject);
+        message.setText(text);
+        message.setFrom(env.getProperty("messaging.mailing.set-from-Java-Mentor"));
+        message.setTo(email);
+        javaMailSender.send(message);
+    }
+
+    @Override
+    public void sendMessage(String subject, String text, String email) {
+        sendBootCampAnswer(subject, text, email);
+    }
+
 }

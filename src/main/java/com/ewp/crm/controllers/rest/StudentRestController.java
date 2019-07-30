@@ -13,6 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.HandlerMapping;
 
 import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +26,7 @@ import java.util.function.Supplier;
 
 @RestController
 @RequestMapping("/rest/student")
-@PreAuthorize("hasAnyAuthority('OWNER')")
+@PreAuthorize("hasAnyAuthority('OWNER', 'ADMIN', 'HR')")
 public class StudentRestController {
 
     private static Logger logger = LoggerFactory.getLogger(StudentRestController.class);
@@ -38,19 +43,23 @@ public class StudentRestController {
 
     private final StatusService statusService;
 
+    private final ClientStatusChangingHistoryService clientStatusChangingHistoryService;
+
     @Autowired
     public StudentRestController(StudentService studentService, ClientService clientService,
                                  ClientHistoryService clientHistoryService, StudentStatusService studentStatusService,
-                                 ProjectPropertiesService projectPropertiesService, StatusService statusService) {
+                                 ProjectPropertiesService projectPropertiesService, StatusService statusService,
+                                 ClientStatusChangingHistoryService clientStatusChangingHistoryService) {
         this.studentService = studentService;
         this.clientService = clientService;
         this.clientHistoryService = clientHistoryService;
         this.studentStatusService = studentStatusService;
         this.projectPropertiesService = projectPropertiesService;
         this.statusService = statusService;
+        this.clientStatusChangingHistoryService = clientStatusChangingHistoryService;
     }
 
-    @GetMapping ("/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<Student> getStudentById(@PathVariable("id") Long id) {
         ResponseEntity result;
         Student student = studentService.get(id);
@@ -76,7 +85,15 @@ public class StudentRestController {
         return result;
     }
 
-    @PostMapping ("/update")
+    @GetMapping("/count")
+    @PreAuthorize("hasAnyAuthority('OWNER', 'ADMIN')")
+    public ResponseEntity<Long> countActiveByDate(@RequestParam("day") String day) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d.MM.yyyy");
+        long numberOfStudents = studentService.countActiveByDate(ZonedDateTime.of(LocalDate.parse(day,formatter), LocalTime.MAX, ZoneId.systemDefault()));
+        return ResponseEntity.ok(numberOfStudents);
+    }
+
+    @PostMapping("/update")
     public HttpStatus updateStudent(@RequestBody Student student, @AuthenticationPrincipal User userFromSession) {
         if (student.getStatus().getId() == null) {
             studentStatusService.getByName(student.getStatus().getStatus()).ifPresent(student::setStatus);
@@ -106,6 +123,13 @@ public class StudentRestController {
                 Status oldStatus = client.getStatus();
                 client.setStatus(statusService.get("Учатся").orElseThrow(() -> new IllegalArgumentException("Status \"Учатся\" doesn't exist!")));
                 clientHistoryService.createHistoryOfChangingStatus(userFromSession, client, oldStatus).ifPresent(client::addHistory);
+                ClientStatusChangingHistory clientStatusChangingHistory = new ClientStatusChangingHistory(
+                        ZonedDateTime.now(),
+                        oldStatus,
+                        client.getStatus(),
+                        client,
+                        userFromSession);
+                clientStatusChangingHistoryService.add(clientStatusChangingHistory);
                 logger.info("{} has changed status of client with id: {} to status \"Учатся\" by the way change next payment date.", userFromSession.getFullName(), client.getId());
             }
         }
@@ -164,7 +188,7 @@ public class StudentRestController {
         return HttpStatus.OK;
     }
 
-    @GetMapping ("/{id}/client")
+    @GetMapping("/{id}/client")
     public ResponseEntity<Client> getClientByStudentId(@PathVariable("id") Long id) {
         ResponseEntity result;
         Client client = studentService.get(id).getClient();
@@ -177,7 +201,7 @@ public class StudentRestController {
         return result;
     }
 
-    @PostMapping ("/{id}/notify/email")
+    @PostMapping("/{id}/notify/email")
     public HttpStatus updateNotifyEmailFlag(@RequestParam boolean status,
                                             @PathVariable("id") Long id,
                                             @AuthenticationPrincipal User userFromSession,
@@ -186,7 +210,7 @@ public class StudentRestController {
         return HttpStatus.OK;
     }
 
-    @PostMapping ("/{id}/notify/sms")
+    @PostMapping("/{id}/notify/sms")
     public HttpStatus updateNotifySMSFlag(@RequestParam boolean status,
                                           @PathVariable("id") Long id,
                                           @AuthenticationPrincipal User userFromSession,
@@ -195,7 +219,7 @@ public class StudentRestController {
         return HttpStatus.OK;
     }
 
-    @PostMapping ("/{id}/notify/vk")
+    @PostMapping("/{id}/notify/vk")
     public HttpStatus updateNotifyVKFlag(@RequestParam boolean status,
                                          @PathVariable("id") Long id,
                                          @AuthenticationPrincipal User userFromSession,
@@ -206,10 +230,11 @@ public class StudentRestController {
 
     /**
      * Change notification status depending on url path.
-     * @param status notification status.
-     * @param id modified student id.
+     *
+     * @param status          notification status.
+     * @param id              modified student id.
      * @param userFromSession logged in user.
-     * @param request HTTP request.
+     * @param request         HTTP request.
      */
     private void updateNotification(boolean status, Long id, User userFromSession, HttpServletRequest request) {
         Student previous = studentService.get(id);

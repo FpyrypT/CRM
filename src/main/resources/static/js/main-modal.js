@@ -432,6 +432,43 @@ $(function () {
                     $('#contract-client-setting-contract-link').empty();
                 }
 
+                $('#other-information-btn').empty();
+
+                if (client.otherInformationLinkData != null) {
+                    $('#other-information-btn').empty().append('<button class="btn btn-info btn-sm" id="get-other-info-btn" ' +
+                        'data-toggle="modal" data-target="#other-information-value-modal" >Дополнительная информация</button>');
+                    $.ajax({
+                        type: 'GET',
+                        url: "/otherInformation/client/" + client.id,
+                        success: function (listInfo) {
+                            let id = "client-" + client.id + "history";
+                            console.log(id);
+                            for (let i = 0; i < listInfo.length; i++) {
+                                let name = listInfo[i].nameField;
+                                if (listInfo[i].typeField === "CHECKBOX") {
+                                    if (listInfo[i].checkboxValue) {
+                                        $('#' + id + ' tbody').append('<tr><td>' + name + '</td><td>ДА</td></tr>')
+                                    } else {
+                                        $('#' + id + ' tbody').append('<tr><td>' + name + '</td>' +
+                                            '<td>НЕТ</td>' +
+                                            '</tr>')
+                                    }
+                                } else {
+                                    $('#' + id + ' tbody').append('<tr><td>' + name + '</td>' +
+                                        '<td>' + listInfo[i].textValue+ '</td>' +
+                                        '</tr>')
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    $('#other-information-btn').empty().append('<button class="btn btn-info btn-sm" id="get-other-info-btn" ' +
+                        'data-toggle="modal" data-target="#other-information-link-modal" >Дополнительная информация</button>');
+                    $('#other-information-link-input').empty();
+                }
+
+                    $('#message-history-btn').empty().append('<button class="btn btn-info btn-sm" id="get-other-info-btn" ' +
+                        'data-toggle="modal" data-target="#message-history-modal" >История сообщений</button>');
 
                 $('.send-all-custom-message').attr('clientId', clientId);
                 $('.send-all-message').attr('clientId', clientId);
@@ -548,19 +585,30 @@ $(function () {
                 }
                 ulComments.append(html);
 
-                /*Client card's history panel, see clientHistory.js*/
-                var history = client.history;
+                /* Client history first loading */
+                $.ajax({
+                    method: 'GET',
+                    url: '/client/history/rest/getHistory/' + client.id,
+                    data: {
+                        page: 0,
+                        isAsc: false
+                    },
+                    success: function (history) {
+                        let history_table = $('#client-' + client.id + 'history').find("tbody");
+                        let current = $(document.getElementsByClassName("upload-history"));
+                        let upload_more_btn = current.parents("div.panel.panel-default").find(".upload-more-history");
+                        if (history.length < 10) {
+                            upload_more_btn.hide();
+                        } else {
+                            upload_more_btn.show();
+                        }
+                        //reset arrow
+                        $('#date').find('i').removeClass('fa-sort-up').addClass('fa-sort-down');
+                        //draw client history
+                        drawClientHistory(history, history_table);
+                    }
+                });
 
-                let history_table = $('#client-' + client.id + 'history').find("tbody");
-                let current = $(document.getElementsByClassName("upload-history"));
-                let upload_more_btn = current.parents("div.panel.panel-default").find(".upload-more-history");
-                if (history.length < 10) {
-                    upload_more_btn.hide();
-                } else {
-                    upload_more_btn.show();
-                }
-                //draw client history
-                drawClientHistory(history, history_table);
             },
             error: function (error) {
                 console.log(error);
@@ -1350,6 +1398,7 @@ function unassignMentor(id) {
             let info_client = $('#info-client' + id);
             info_client.find("p[style*='display:none']").remove();
             info_client.find(".mentor-icon_card").remove();
+            info_client.find(".ownerMentorId").remove();
             if (unassignBtn.length !== 0) {
                 unassignBtn.before(
                     "<button " +

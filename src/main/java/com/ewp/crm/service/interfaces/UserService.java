@@ -12,8 +12,10 @@ public interface UserService extends CommonService<User> {
 
 	Optional<User> getByEmailOrPhone(String email, String phone);
 
-	User add(User user);
+	@Override
+    User add(User user);
 
+	@Override
 	void update(User user);
 
 	void addPhoto(MultipartFile file, User user);
@@ -27,4 +29,6 @@ public interface UserService extends CommonService<User> {
 	void setColorBackground(String color, User user);
 
 	List<User> getUserByVkToken(long id);
+
+	Optional<User> getUserToOwnCard();
 }

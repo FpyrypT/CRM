@@ -6,6 +6,8 @@ import com.ewp.crm.models.Status;
 import com.ewp.crm.models.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -23,6 +25,7 @@ public interface ClientRepository extends CommonGenericRepository<Client>, Clien
 
 	List<Client> getAllByIdIn(List<Long> ids);
 
+	@Override
 	Page<Client> findAll(Pageable pageable);
 
 	Page<Client> getAllByOwnerUser(Pageable pageable, User clientOwner);
@@ -42,4 +45,7 @@ public interface ClientRepository extends CommonGenericRepository<Client>, Clien
 	default Client getClientByEmail(String Email) {
 		return getClientByClientEmailsEquals(Email);
 	}
+
+    @Query(value = "from Client c inner join c.clientEmails ce where ce in :emails")
+    List<Client> getClientsOfEmails(@Param("emails") List<String> emails);
 }
